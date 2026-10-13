@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>cmux Reminders</title>
+<meta name="description" content="Notifications from your Claude Code, Codex and Devin tabs in cmux.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="cmux">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<script src="config.js"></script>
+<style>
+  :root {
+    --bg: #f2f2f7; --card: #ffffff; --text: #1d1d1f; --muted: #6e6e73; --line: rgba(60, 60, 67, 0.14);
+    --blue: #007aff; --green: #34c759; --orange: #ff9500; --chip: rgba(118, 118, 128, 0.12);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000000; --card: #1c1c1e; --text: #f5f5f7; --muted: #98989d; --line: rgba(84, 84, 88, 0.55);
+      --blue: #0a84ff; --green: #30d158; --orange: #ff9f0a; --chip: rgba(118, 118, 128, 0.24);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 17px/1.35 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+    padding: calc(env(safe-area-inset-top) + 20px) 16px calc(env(safe-area-inset-bottom) + 32px);
+  }
+  main { max-width: 560px; margin: 0 auto; }
+  [hidden] { display: none !important; }
+  .top { display: flex; align-items: center; gap: 12px; margin: 8px 4px 22px; }
+  .top img { width: 52px; height: 52px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.18); }
+  h1 { font-size: 28px; line-height: 1.1; margin: 0; letter-spacing: -0.02em; }
+  .sub { color: var(--muted); font-size: 15px; margin-top: 3px; }
+  .card { background: var(--card); border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+  h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.02em; color: var(--muted); margin: 26px 16px 8px; }
+  ol { margin: 0; padding: 0; list-style: none; counter-reset: step; }
+  ol li { counter-increment: step; display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  ol li:last-child { border-bottom: 0; }
+  ol li::before {
+    content: counter(step); flex: none; width: 26px; height: 26px; border-radius: 13px; background: var(--blue); color: #fff;
+    font-size: 15px; font-weight: 600; display: grid; place-items: center; margin-top: 1px;
+  }
+  .glyph { display: inline-block; vertical-align: -3px; width: 18px; height: 18px; color: var(--blue); }
+  button {
+    font: inherit; font-weight: 600; border: 0; border-radius: 12px; padding: 14px 18px; width: 100%;
+    background: var(--blue); color: #fff; cursor: pointer;
+  }
+  button.secondary { background: var(--chip); color: var(--blue); }
+  button:active { opacity: 0.7; }
+  .note { color: var(--muted); font-size: 15px; margin: 12px 4px 0; }
+  .error { color: #ff3b30; font-size: 15px; margin-top: 12px; }
+  .code {
+    font: 12px/1.4 ui-monospace, "SF Mono", Menlo, monospace; color: var(--muted); background: var(--chip);
+    border-radius: 10px; padding: 10px 12px; word-break: break-all; max-height: 4.4em; overflow: hidden;
+    -webkit-user-select: all; user-select: all; margin: 12px 0;
+  }
+  details summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
+  details summary::-webkit-details-marker { display: none; }
+  details summary::after { content: "Show"; color: var(--blue); font-weight: 400; }
+  details[open] summary::after { content: "Hide"; }
+  details p { margin: 10px 0 0; color: var(--muted); font-size: 15px; }
+  .list { background: var(--card); border-radius: 14px; overflow: hidden; }
+  .row { display: flex; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+  .row:last-child { border-bottom: 0; }
+  .dot { flex: none; width: 10px; height: 10px; border-radius: 5px; margin-top: 7px; }
+  .row .title { font-weight: 600; display: flex; justify-content: space-between; gap: 8px; }
+  .row .title span:last-child { color: var(--muted); font-weight: 400; font-size: 15px; flex: none; }
+  .row .body { color: var(--muted); font-size: 15px; white-space: pre-line; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+  .empty { color: var(--muted); padding: 16px; text-align: center; font-size: 15px; }
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <img src="apple-touch-icon.png" alt="">
+    <div>
+      <h1>cmux Reminders</h1>
+      <div class="sub" id="status">What your coding agents are doing</div>
+    </div>
+  </div>
+
+  <section id="install" hidden>
+    <div class="card">
+      <ol>
+        <li><div>Tap <b>Share</b> <svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg> in Safari's toolbar.</div></li>
+        <li><div>Scroll down and tap <b>Add to Home Screen</b>, then <b>Add</b>.</div></li>
+        <li><div>Open <b>cmux Reminders</b> from your Home Screen to finish.</div></li>
+      </ol>
+    </div>
+    <p class="note">Apple only lets a page send notifications once it's on your Home Screen. Nothing is installed from the App Store.</p>
+  </section>
+
+  <section id="enable" hidden>
+    <div class="card">
+      <p style="margin:0 0 14px">Get a notification here when an agent starts, finishes, or is waiting on you.</p>
+      <button id="enable-button">Turn On Notifications</button>
+      <div class="error" id="enable-error" hidden></div>
+    </div>
+    <p class="note">Messages are encrypted on your Mac, and only this device can read them.</p>
+  </section>
+
+  <section id="paired" hidden>
+    <details class="card" id="pair">
+      <summary>Pair with your Mac</summary>
+      <p>Copy the code, then on your Mac open the ☑︎ menu and choose <b>Send to iPhone &amp; iPad…</b>. The code fills in by itself.</p>
+      <div class="code" id="code"></div>
+      <button id="copy">Copy Pairing Code</button>
+    </details>
+    <h2>Recent</h2>
+    <div class="list" id="history"><div class="empty">Nothing yet. Updates from your agents show up here.</div></div>
+  </section>
+
+  <section id="unsupported" hidden>
+    <div class="card">This browser can't receive notifications from a web page. On iPhone and iPad, use Safari on iOS 16.4 or later.</div>
+  </section>
+</main>
+<script>
+  const KEY = self.CMUX_PUSH_KEY;
+  const $ = (id) => document.getElementById(id);
+  const ua = navigator.userAgent;
+  const isIPad = /iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  const isIOS = isIPad || /iPhone|iPod/.test(ua);
+  const standalone = navigator.standalone === true || matchMedia("(display-mode: standalone)").matches;
+  const deviceName = isIPad ? "iPad" : isIOS ? "iPhone" : "Browser";
+
+  const b64url = (bytes) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const fromB64url = (s) => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
+
+  function show(view) {
+    for (const id of ["install", "enable", "paired", "unsupported"]) $(id).hidden = id !== view;
+  }
+
+  // A subscription made for a different Mac key can't receive this Mac's pushes.
+  function sameKey(sub) {
+    const key = sub.options && sub.options.applicationServerKey;
+    return !key || b64url(new Uint8Array(key)) === KEY;
+  }
+
+  function showPairing(sub) {
+    const j = sub.toJSON();
+    const json = JSON.stringify({ e: j.endpoint, k: j.keys.p256dh, a: j.keys.auth, n: deviceName });
+    const code = "cmuxr1." + b64url(new TextEncoder().encode(json));
+    $("code").textContent = code;
+    $("copy").onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(code);
+        $("copy").textContent = "Copied: now add it on your Mac";
+      } catch {
+        getSelection().selectAllChildren($("code"));
+        $("copy").textContent = "Select the code above and copy it";
+      }
+    };
+    $("status").textContent = "Notifications on";
+    show("paired");
+    renderHistory();
+  }
+
+  async function start() {
+    if (isIOS && !standalone) return show("install");
+    if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) return show("unsupported");
+    const reg = await navigator.serviceWorker.register("sw.js");
+    await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub && Notification.permission === "granted" && sameKey(sub)) return showPairing(sub);
+    show("enable");
+  }
+
+  $("enable-button").onclick = async () => {
+    $("enable-error").hidden = true;
+    try {
+      // iOS only asks when this runs straight from the tap.
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        throw new Error("Notifications are off for cmux Reminders. Turn them on in Settings → Notifications → cmux, then tap again.");
+      }
+      const reg = await navigator.serviceWorker.ready;
+      let sub = await reg.pushManager.getSubscription();
+      if (sub && !sameKey(sub)) { await sub.unsubscribe(); sub = null; }
+      sub = sub || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: fromB64url(KEY) });
+      $("pair").open = true;
+      showPairing(sub);
+    } catch (e) {
+      $("enable-error").textContent = e.message || String(e);
+      $("enable-error").hidden = false;
+    }
+  };
+
+  const colors = { working: "var(--blue)", needsYou: "var(--orange)", done: "var(--green)" };
+  function ago(seconds) {
+    const s = Math.max(0, Math.round(Date.now() / 1000 - seconds));
+    if (s < 60) return "now";
+    if (s < 3600) return Math.floor(s / 60) + "m";
+    if (s < 86400) return Math.floor(s / 3600) + "h";
+    return Math.floor(s / 86400) + "d";
+  }
+
+  async function renderHistory() {
+    const saved = await (await caches.open("cmux-history")).match("history");
+    const list = saved ? await saved.json() : [];
+    if (!list.length) { $("pair").open = true; return; }
+    const box = $("history");
+    box.replaceChildren(...list.map((m) => {
+      const row = document.createElement("div");
+      row.className = "row";
+      const dot = document.createElement("div");
+      dot.className = "dot";
+      dot.style.background = colors[m.state] || "var(--muted)";
+      const text = document.createElement("div");
+      text.style.minWidth = "0";
+      text.style.flex = "1";
+      const title = document.createElement("div");
+      title.className = "title";
+      const name = document.createElement("span");
+      name.textContent = m.title || "";
+      const when = document.createElement("span");
+      when.textContent = m.at ? ago(m.at) : "";
+      title.append(name, when);
+      const body = document.createElement("div");
+      body.className = "body";
+      body.textContent = m.body || "";
+      text.append(title, body);
+      row.append(dot, text);
+      return row;
+    }));
+  }
+
+  if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", renderHistory);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && !$("paired").hidden) renderHistory(); });
+  start().catch((e) => { $("enable-error").textContent = e.message || String(e); $("enable-error").hidden = false; show("enable"); });
+</script>
+</body>
+</html>
